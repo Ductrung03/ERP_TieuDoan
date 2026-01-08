@@ -1,0 +1,8 @@
+/**
+ * User Management - Services Barrel Export
+ */
+export * from './auth.service';
+export * from './user.service';
+export * from './role.service';
+export * from './permission.service';
+export * from './data-scope.service';
