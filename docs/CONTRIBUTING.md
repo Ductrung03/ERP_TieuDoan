@@ -122,7 +122,25 @@ Mọi API phải trả về theo cấu trúc thống nhất:
 
 ---
 
-## 6. 🤖 Protocol for AI Agents (Giao thức cho AI)
+## 6. 🔒 RBAC Compliance (Tiêu Chuẩn Phân Quyền)
+
+Mọi tính năng mới (Feature) được thêm vào hệ thống **BẮT BUỘC** phải tuân thủ quy trình phân quyền sau:
+
+### 6.1 Định Nghĩa Quyền (Permission Definition)
+- Khi tạo API/Feature mới, phải định nghĩa quyền tương ứng trong migration script hoặc seed data.
+- Ví dụ: Thêm feature `Quản Lý Kho` -> Phải có quyền `VIEW_INVENTORY`, `CREATE_ITEM`, `EXPORT_REPORT`.
+
+### 6.2 Auto-Assign cho Admin
+- **QUY TẮC VÀNG**: Quyền mới tạo phải được tự động gán cho vai trò **Quản Trị Viên (VT01)** trong cùng script tạo quyền.
+- Điều này đảm bảo người quản trị luôn có quyền truy cập đầy đủ vào các tính năng mới ngay sau khi deployment.
+
+### 6.3 Kiểm Tra Quyền (Enforcement)
+- **Backend API**: Phải có middleware kiểm tra quyền `requirePermission(MODULE, FEATURE, ACTION)`.
+- **Frontend UI**: Phải ẩn/hiện nút bấm hoặc trang dựa trên quyền của user (dùng hook `usePermission`).
+
+---
+
+## 7. 🤖 Protocol for AI Agents (Giao thức cho AI)
 
 Nếu bạn là AI, bạn phải thực hiện quy trình sau trước khi viết code:
 

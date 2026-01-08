@@ -1,6 +1,6 @@
-import axiosInstance from '../axios.instance';
-import { API_ENDPOINTS } from '../endpoints';
-import type { ApiResponse } from '../endpoints';
+import axiosInstance from '../../axios.instance';
+import { API_ENDPOINTS } from '../../endpoints';
+import type { ApiResponse } from '../../endpoints';
 
 export interface CanBo {
   macanbo: string;
@@ -12,6 +12,12 @@ export interface CanBo {
   thoigianden?: Date;
   thoigiandi?: Date;
   madonvi?: string;
+  
+  // Joined fields
+  machucvu?: string;
+  tenchucvu?: string;
+  maquanham?: string;
+  tenquanham?: string;
 }
 
 export interface CreateCanBoDto {
@@ -22,6 +28,10 @@ export interface CreateCanBoDto {
   gmail?: string;
   thoigianden?: Date;
   madonvi?: string;
+  
+  // Required
+  machucvu: string;
+  maquanham: string;
 }
 
 export const canBoService = {

@@ -1,6 +1,6 @@
 import { canBoRepository } from '../repositories';
 import { CanBo, CreateCanBoDto, UpdateCanBoDto } from '../entities';
-import { NotFoundError } from '../../core/errors';
+import { NotFoundError, BadRequestError } from '../../core/errors';
 
 export class CanBoService {
   async getAll(donviId?: string): Promise<CanBo[]> {
@@ -16,6 +16,8 @@ export class CanBoService {
   }
 
   async create(data: CreateCanBoDto): Promise<CanBo> {
+    if (!data.machucvu) throw new BadRequestError('Vui lòng chọn chức vụ');
+    if (!data.maquanham) throw new BadRequestError('Vui lòng chọn quân hàm');
     return canBoRepository.create(data);
   }
 
@@ -30,7 +32,14 @@ export class CanBoService {
 
   async delete(id: string): Promise<void> {
     await this.getById(id);
-    await canBoRepository.delete(id);
+    try {
+      await canBoRepository.delete(id);
+    } catch (error: any) {
+      if (error.code === '23503') { // ForeignKeyViolation in Postgres
+        throw new BadRequestError('Không thể xóa cán bộ này vì dữ liệu đang được sử dụng ở chức năng khác (VD: Lịch trực, Phân công).');
+      }
+      throw error;
+    }
   }
 }
 

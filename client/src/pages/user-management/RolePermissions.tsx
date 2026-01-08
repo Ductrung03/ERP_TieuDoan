@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, Accordion, Form, Button, Spinner, Alert } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import roleService, { type Role } from '../../api/services/role.service';
-import permissionService, { type PermissionGroup, type Permission } from '../../api/services/permission.service';
+import {
+    roleService,
+    permissionService,
+    type Role,
+    type PermissionGroup,
+    type Permission
+} from '../../api/services';
 
 const RolePermissions: React.FC = () => {
     const { roleId } = useParams<{ roleId: string }>();

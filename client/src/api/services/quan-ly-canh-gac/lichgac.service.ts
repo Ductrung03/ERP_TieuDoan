@@ -1,6 +1,6 @@
-import axiosInstance from '../axios.instance';
-import { API_ENDPOINTS } from '../endpoints';
-import type { ApiResponse } from '../endpoints';
+import axiosInstance from '../../axios.instance';
+import { API_ENDPOINTS } from '../../endpoints';
+import type { ApiResponse } from '../../endpoints';
 
 export interface LichGac {
   malichgac: string;

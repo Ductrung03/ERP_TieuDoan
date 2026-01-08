@@ -3,14 +3,37 @@ import { Card, Table, Button, Form, Row, Col, InputGroup } from 'react-bootstrap
 import { toast } from 'react-toastify';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import Pageheader from '../../shared/layouts-components/pageheader/pageheader';
-import { canBoService, donViService, type CanBo, type DonVi, type CreateCanBoDto } from '../../api/services';
+import {
+    canBoService,
+    donViService,
+    quanHamService,
+    chucVuService,
+    type CanBo,
+    type DonVi,
+    type CreateCanBoDto,
+    type QuanHam,
+    type ChucVu
+} from '../../api/services';
+import DeleteConfirmationModal from '../../shared/components/common/DeleteConfirmationModal';
 
 const QuanLyCanBo: React.FC = () => {
     const [canBos, setCanBos] = useState<CanBo[]>([]);
     const [donVis, setDonVis] = useState<DonVi[]>([]);
+    const [quanHams, setQuanHams] = useState<QuanHam[]>([]);
+    const [chucVus, setChucVus] = useState<ChucVu[]>([]);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Delete Modal State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
+    // Edit & View State
+    const [editingCanBo, setEditingCanBo] = useState<CanBo | null>(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedCanBo, setSelectedCanBo] = useState<CanBo | null>(null);
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateCanBoDto>({
         defaultValues: {
@@ -20,12 +43,16 @@ const QuanLyCanBo: React.FC = () => {
             sdt: '',
             gmail: '',
             madonvi: '',
+            machucvu: '',
+            maquanham: ''
         }
     });
 
     useEffect(() => {
         loadData();
         loadDonVis();
+        loadQuanHams();
+        loadChucVus();
     }, []);
 
     const loadData = async () => {
@@ -49,32 +76,114 @@ const QuanLyCanBo: React.FC = () => {
         }
     };
 
+    const loadQuanHams = async () => {
+        try {
+            const data = await quanHamService.getAll();
+            setQuanHams(data);
+        } catch (error) {
+            console.error('Failed to load ranks:', error);
+        }
+    };
+
+    const loadChucVus = async () => {
+        try {
+            const data = await chucVuService.getAll();
+            setChucVus(data);
+        } catch (error) {
+            console.error('Failed to load positions:', error);
+        }
+    };
+
     const onSubmit: SubmitHandler<CreateCanBoDto> = async (data) => {
         try {
             const payload = {
                 ...data,
                 ngaysinh: data.ngaysinh ? new Date(data.ngaysinh) : undefined,
-                thoigianden: data.thoigianden ? new Date(data.thoigianden) : new Date()
+                thoigianden: data.thoigianden ? new Date(data.thoigianden) : new Date(),
+                madonvi: data.madonvi || undefined
             };
-            await canBoService.create(payload);
-            toast.success('Tạo cán bộ thành công!');
-            setShowForm(false);
+
+            if (editingCanBo) {
+                await canBoService.update(editingCanBo.macanbo, payload);
+                toast.success('Cập nhật cán bộ thành công!');
+            } else {
+                await canBoService.create(payload);
+                toast.success('Tạo cán bộ thành công!');
+            }
+
+            handleCloseForm();
             loadData();
-            reset();
-        } catch (error) {
-            console.error('Failed to create:', error);
+        } catch (error: any) {
+            console.error('Failed to save:', error);
+            toast.error(error.response?.data?.message || 'Lưu thất bại');
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('Bạn có chắc muốn xóa?')) return;
+    const handleCloseForm = () => {
+        setShowForm(false);
+        setEditingCanBo(null);
+        reset({
+            hoten: '',
+            ngaysinh: undefined,
+            diachi: '',
+            sdt: '',
+            gmail: '',
+            madonvi: '',
+            machucvu: '',
+            maquanham: ''
+        });
+    };
+
+    const handleEditClick = (item: CanBo) => {
+        setEditingCanBo(item);
+        // Format date for input type="date"
+        const formatDate = (dateString?: string | Date) => {
+            if (!dateString) return undefined;
+            return new Date(dateString).toISOString().split('T')[0];
+        };
+
+        reset({
+            hoten: item.hoten,
+            ngaysinh: formatDate(item.ngaysinh) as any,
+            diachi: item.diachi,
+            sdt: item.sdt,
+            gmail: item.gmail,
+            madonvi: item.madonvi || '',
+            machucvu: item.machucvu || '',
+            maquanham: item.maquanham || ''
+        });
+        setShowForm(true);
+    };
+
+    const handleViewClick = (item: CanBo) => {
+        setSelectedCanBo(item);
+        setShowDetailModal(true);
+    };
+
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
+        setDeleteLoading(true);
         try {
-            await canBoService.delete(id);
-            toast.success('Xóa thành công!');
+            await canBoService.delete(deleteId);
+            toast.success('Xóa cán bộ thành công!');
+            setShowDeleteModal(false);
             loadData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to delete:', error);
+            toast.error(error.response?.data?.message || error.response?.data?.error?.message || 'Xóa thất bại');
+        } finally {
+            setDeleteLoading(false);
         }
+    };
+
+    const handleCloseDeleteModal = () => {
+        setShowDeleteModal(false);
+        setDeleteId(null);
     };
 
     // Filter data
@@ -102,10 +211,6 @@ const QuanLyCanBo: React.FC = () => {
                             <i className={`ti ${showForm ? 'ti-x' : 'ti-plus'} me-1`}></i>
                             {showForm ? 'Hủy' : 'Thêm Cán Bộ'}
                         </Button>
-                        <Button variant="success-light" size="sm">
-                            <i className="ti ti-file-export me-1"></i>
-                            Xuất Báo Cáo
-                        </Button>
                     </div>
                 </Card.Header>
 
@@ -131,17 +236,17 @@ const QuanLyCanBo: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Create Form */}
+                    {/* Create/Edit Form */}
                     {showForm && (
                         <Card className="mb-4 border-primary-light">
                             <Card.Body className="bg-primary-transparent">
                                 <h6 className="mb-3">
-                                    <i className="ti ti-user-plus me-2"></i>
-                                    Thêm Cán Bộ Mới
+                                    <i className={`ti ${editingCanBo ? 'ti-edit' : 'ti-user-plus'} me-2`}></i>
+                                    {editingCanBo ? 'Cập Nhật Thông Tin Cán Bộ' : 'Thêm Cán Bộ Mới'}
                                 </h6>
                                 <Form onSubmit={handleSubmit(onSubmit)}>
                                     <Row>
-                                        <Col md={6}>
+                                        <Col md={4}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label>
                                                     <i className="ti ti-user me-1 text-primary"></i>
@@ -158,7 +263,7 @@ const QuanLyCanBo: React.FC = () => {
                                                 </Form.Control.Feedback>
                                             </Form.Group>
                                         </Col>
-                                        <Col md={6}>
+                                        <Col md={4}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label>
                                                     <i className="ti ti-calendar me-1 text-info"></i>
@@ -170,8 +275,6 @@ const QuanLyCanBo: React.FC = () => {
                                                 />
                                             </Form.Group>
                                         </Col>
-                                    </Row>
-                                    <Row>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label>
@@ -179,7 +282,7 @@ const QuanLyCanBo: React.FC = () => {
                                                     Đơn Vị
                                                 </Form.Label>
                                                 <Form.Select {...register("madonvi")}>
-                                                    <option value="">-- Chọn đơn vị --</option>
+                                                    <option value="">-- Không chọn --</option>
                                                     {donVis.map((dv) => (
                                                         <option key={dv.madonvi} value={dv.madonvi}>
                                                             {dv.tendonvi}
@@ -188,7 +291,55 @@ const QuanLyCanBo: React.FC = () => {
                                                 </Form.Select>
                                             </Form.Group>
                                         </Col>
-                                        <Col md={4}>
+                                    </Row>
+                                    <Row>
+                                        <Col md={6}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>
+                                                    <i className="ti ti-medal me-1 text-danger"></i>
+                                                    Quân Hàm *
+                                                </Form.Label>
+                                                <Form.Select
+                                                    isInvalid={!!errors.maquanham}
+                                                    {...register("maquanham", { required: "Vui lòng chọn quân hàm" })}
+                                                >
+                                                    <option value="">-- Chọn Quân Hàm --</option>
+                                                    {quanHams.map((qh) => (
+                                                        <option key={qh.maquanham} value={qh.maquanham}>
+                                                            {qh.tenquanham}
+                                                        </option>
+                                                    ))}
+                                                </Form.Select>
+                                                <Form.Control.Feedback type="invalid">
+                                                    {errors.maquanham?.message}
+                                                </Form.Control.Feedback>
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>
+                                                    <i className="ti ti-briefcase me-1 text-success"></i>
+                                                    Chức Vụ *
+                                                </Form.Label>
+                                                <Form.Select
+                                                    isInvalid={!!errors.machucvu}
+                                                    {...register("machucvu", { required: "Vui lòng chọn chức vụ" })}
+                                                >
+                                                    <option value="">-- Chọn Chức Vụ --</option>
+                                                    {chucVus.map((cv) => (
+                                                        <option key={cv.machucvu} value={cv.machucvu}>
+                                                            {cv.tenchucvu}
+                                                        </option>
+                                                    ))}
+                                                </Form.Select>
+                                                <Form.Control.Feedback type="invalid">
+                                                    {errors.machucvu?.message}
+                                                </Form.Control.Feedback>
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
+                                    <Row>
+                                        <Col md={6}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label>
                                                     <i className="ti ti-phone me-1 text-success"></i>
@@ -210,7 +361,7 @@ const QuanLyCanBo: React.FC = () => {
                                                 </Form.Control.Feedback>
                                             </Form.Group>
                                         </Col>
-                                        <Col md={4}>
+                                        <Col md={6}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label>
                                                     <i className="ti ti-mail me-1 text-danger"></i>
@@ -236,9 +387,9 @@ const QuanLyCanBo: React.FC = () => {
                                     <div className="d-flex gap-2">
                                         <Button type="submit" variant="primary">
                                             <i className="ti ti-check me-1"></i>
-                                            Tạo Cán Bộ
+                                            {editingCanBo ? 'Cập Nhật' : 'Tạo Cán Bộ'}
                                         </Button>
-                                        <Button type="button" variant="outline-secondary" onClick={() => setShowForm(false)}>
+                                        <Button type="button" variant="outline-secondary" onClick={handleCloseForm}>
                                             Hủy
                                         </Button>
                                     </div>
@@ -268,9 +419,10 @@ const QuanLyCanBo: React.FC = () => {
                                     <tr>
                                         <th><i className="ti ti-hash me-1"></i>STT</th>
                                         <th><i className="ti ti-user me-1"></i>Họ Tên</th>
+                                        <th><i className="ti ti-medal me-1"></i>Quân hàm</th>
+                                        <th><i className="ti ti-briefcase me-1"></i>Chức vụ</th>
                                         <th><i className="ti ti-building me-1"></i>Đơn Vị</th>
                                         <th><i className="ti ti-phone me-1"></i>SĐT</th>
-                                        <th><i className="ti ti-mail me-1"></i>Email</th>
                                         <th className="text-center"><i className="ti ti-settings me-1"></i>Thao Tác</th>
                                     </tr>
                                 </thead>
@@ -287,25 +439,44 @@ const QuanLyCanBo: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td>
+                                                {item.tenquanham ? (
+                                                    <span className="badge bg-danger-transparent">{item.tenquanham}</span>
+                                                ) : <span className="text-muted">-</span>}
+                                            </td>
+                                            <td>
+                                                {item.tenchucvu ? (
+                                                    <span className="badge bg-success-transparent">{item.tenchucvu}</span>
+                                                ) : <span className="text-muted">-</span>}
+                                            </td>
+                                            <td>
                                                 {donVis.find(d => d.madonvi === item.madonvi)?.tendonvi || (
                                                     <span className="text-muted">-</span>
                                                 )}
                                             </td>
                                             <td>{item.sdt || <span className="text-muted">-</span>}</td>
-                                            <td>{item.gmail || <span className="text-muted">-</span>}</td>
                                             <td>
                                                 <div className="action-btn-group justify-content-center">
-                                                    <Button variant="info-light" size="sm" title="Xem chi tiết">
+                                                    <Button
+                                                        variant="info-light"
+                                                        size="sm"
+                                                        title="Xem chi tiết"
+                                                        onClick={() => handleViewClick(item)}
+                                                    >
                                                         <i className="ti ti-eye"></i>
                                                     </Button>
-                                                    <Button variant="warning-light" size="sm" title="Sửa">
+                                                    <Button
+                                                        variant="warning-light"
+                                                        size="sm"
+                                                        title="Sửa"
+                                                        onClick={() => handleEditClick(item)}
+                                                    >
                                                         <i className="ti ti-edit"></i>
                                                     </Button>
                                                     <Button
                                                         variant="danger-light"
                                                         size="sm"
                                                         title="Xóa"
-                                                        onClick={() => handleDelete(item.macanbo)}
+                                                        onClick={() => handleDeleteClick(item.macanbo)}
                                                     >
                                                         <i className="ti ti-trash"></i>
                                                     </Button>
@@ -319,6 +490,85 @@ const QuanLyCanBo: React.FC = () => {
                     )}
                 </Card.Body>
             </Card>
+
+            <DeleteConfirmationModal
+                show={showDeleteModal}
+                title="Xóa Cán Bộ"
+                content={`Bạn có chắc muốn xóa cán bộ này không? Hành động này không thể hoàn tác.`}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCloseDeleteModal}
+                loading={deleteLoading}
+            />
+            {/* View Detail Modal - Using React Bootstrap Modal directly if not creating separate component yet */}
+            {selectedCanBo && (
+                <div className={`modal fade ${showDetailModal ? 'show d-block' : ''}`} tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header bg-primary-transparent">
+                                <h5 className="modal-title text-primary">
+                                    <i className="ti ti-user-circle me-2"></i>
+                                    Chi Tiết Cán Bộ
+                                </h5>
+                                <button type="button" className="btn-close" onClick={() => setShowDetailModal(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="text-center mb-4">
+                                    <div className="avatar avatar-xxl bg-info-transparent rounded-circle mb-2">
+                                        <i className="ti ti-user text-info fs-1"></i>
+                                    </div>
+                                    <h5 className="fw-bold mb-1">{selectedCanBo.hoten}</h5>
+                                    <p className="text-muted mb-0">{selectedCanBo.tenquanham} - {selectedCanBo.tenchucvu}</p>
+                                </div>
+                                <div className="row g-3">
+                                    <div className="col-6">
+                                        <div className="p-3 border rounded bg-light">
+                                            <small className="text-muted d-block mb-1">Ngày sinh</small>
+                                            <span className="fw-medium">
+                                                {selectedCanBo.ngaysinh ? new Date(selectedCanBo.ngaysinh).toLocaleDateString('vi-VN') : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="col-6">
+                                        <div className="p-3 border rounded bg-light">
+                                            <small className="text-muted d-block mb-1">Đơn vị</small>
+                                            <span className="fw-medium">
+                                                {donVis.find(d => d.madonvi === selectedCanBo.madonvi)?.tendonvi || '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="col-6">
+                                        <div className="p-3 border rounded bg-light">
+                                            <small className="text-muted d-block mb-1">Số điện thoại</small>
+                                            <span className="fw-medium">{selectedCanBo.sdt || '-'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-6">
+                                        <div className="p-3 border rounded bg-light">
+                                            <small className="text-muted d-block mb-1">Email</small>
+                                            <span className="fw-medium">{selectedCanBo.gmail || '-'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-12">
+                                        <div className="p-3 border rounded bg-light">
+                                            <small className="text-muted d-block mb-1">Địa chỉ</small>
+                                            <span className="fw-medium">{selectedCanBo.diachi || '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <Button variant="secondary" onClick={() => setShowDetailModal(false)}>Đóng</Button>
+                                <Button variant="primary" onClick={() => {
+                                    setShowDetailModal(false);
+                                    handleEditClick(selectedCanBo);
+                                }}>
+                                    <i className="ti ti-edit me-1"></i> Chỉnh sửa
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -46,6 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <Route index element={<Navigate to="guard-management/dashboard" replace />} />
 
                 {/* Guard Management */}
+                <Route path="guard-management" element={<Navigate to="guard-management/dashboard" replace />} />
                 <Route path="guard-management/dashboard" element={<GuardDashboard />} />
                 <Route path="guard-management/lich-gac" element={<LichGacList />} />
                 <Route path="guard-management/phan-cong" element={<PhanCongGac />} />

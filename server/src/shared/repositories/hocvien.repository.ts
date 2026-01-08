@@ -80,6 +80,13 @@ export class HocVienRepository {
     );
     return (result.rowCount ?? 0) > 0;
   }
+  async deleteByDonVi(donviId: string): Promise<number> {
+    const result = await db.query(
+      `DELETE FROM ${this.tableName} WHERE madonvi = $1`,
+      [donviId]
+    );
+    return result.rowCount ?? 0;
+  }
 }
 
 export const hocVienRepository = new HocVienRepository();

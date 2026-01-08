@@ -6,7 +6,10 @@ export class DonViRepository {
 
   async findAll(): Promise<DonVi[]> {
     const result = await db.query<DonVi>(
-      `SELECT * FROM ${this.tableName} ORDER BY tendonvi`
+      `SELECT d.*, 
+       (SELECT COUNT(*)::int FROM hocvien h WHERE h.madonvi = d.madonvi) as tongquanso
+       FROM ${this.tableName} d 
+       ORDER BY d.tendonvi`
     );
     return result.rows;
   }
@@ -32,7 +35,7 @@ export class DonViRepository {
       `INSERT INTO ${this.tableName} (tendonvi, tongquanso, kyhieu, madonvitren)
        VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [data.tendonvi, data.tongquanso || 0, data.kyhieu, data.madonvitren]
+      [data.tendonvi, data.tongquanso || 0, data.kyhieu, data.madonvitren === '' ? null : data.madonvitren]
     );
     return result.rows[0];
   }
@@ -56,7 +59,7 @@ export class DonViRepository {
     }
     if (data.madonvitren !== undefined) {
       fields.push(`madonvitren = $${paramIndex++}`);
-      values.push(data.madonvitren);
+      values.push(data.madonvitren === '' ? null : data.madonvitren);
     }
 
     if (fields.length === 0) return this.findById(id);
@@ -75,6 +78,13 @@ export class DonViRepository {
       [id]
     );
     return (result.rowCount ?? 0) > 0;
+  }
+  async deleteByParent(parentId: string): Promise<number> {
+    const result = await db.query(
+      `DELETE FROM ${this.tableName} WHERE madonvitren = $1`,
+      [parentId]
+    );
+    return result.rowCount ?? 0;
   }
 }
 

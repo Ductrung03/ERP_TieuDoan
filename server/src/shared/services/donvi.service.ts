@@ -1,6 +1,6 @@
-import { donViRepository } from '../repositories';
+import { donViRepository, canBoRepository, hocVienRepository } from '../repositories';
 import { DonVi, CreateDonViDto, UpdateDonViDto } from '../entities';
-import { NotFoundError } from '../../core/errors';
+import { NotFoundError, BadRequestError } from '../../core/errors';
 
 export class DonViService {
   async getAll(): Promise<DonVi[]> {
@@ -33,8 +33,33 @@ export class DonViService {
   }
 
   async delete(id: string): Promise<void> {
-    await this.getById(id);
-    await donViRepository.delete(id);
+    try {
+      const donVi = await this.getById(id);
+
+      // Cascade Delete Strategy: Delete children and related data first
+      
+      // 1. Delete all students in this unit
+      await hocVienRepository.deleteByDonVi(id);
+
+      // 2. Delete all officers in this unit
+      await canBoRepository.deleteByDonVi(id);
+
+      // 3. Handle child units (Recursive delete or just direct children)
+      const childUnits = await donViRepository.findByParent(id);
+      for (const child of childUnits) {
+         // Recursively delete child units to ensure their dependencies are also cleared
+         await this.delete(child.madonvi);
+      }
+
+      // 4. Delete the unit itself
+      await donViRepository.delete(id);
+    } catch (error: any) {
+      console.error('DonViService Delete Error:', error);
+      if (error.code === '23503') {
+         throw new BadRequestError('Không thể xóa: Dữ liệu (Cán bộ/Học viên) đang được sử dụng ở chức năng khác (Phân công/Lịch trực).');
+      }
+      throw error;
+    }
   }
 }
 

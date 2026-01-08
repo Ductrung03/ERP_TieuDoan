@@ -8,6 +8,9 @@ import Backtotop from "../shared/layouts-components/backtotop/backtotop";
 import { Initialload } from "../contextapi";
 import { data$, getState } from "../shared/layouts-components/services/switcherServices";
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function App() {
 	const [lateLoad, setlateLoad] = useState(false);
 	const progressRef = useRef<HTMLDivElement>(null);
@@ -57,6 +60,7 @@ function App() {
 						<Footer />
 					</div>
 					<Backtotop />
+					<ToastContainer />
 				</div>
 			</Initialload.Provider>
 		</Fragment>

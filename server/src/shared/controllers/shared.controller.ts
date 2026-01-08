@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { donViService, canBoService, hocVienService } from '../services';
+import { donViService, canBoService, hocVienService, quanHamService, chucVuService } from '../services';
 import { ApiResponse } from '../../modules/_loader';
 
 // ==================== DonVi Controller ====================
@@ -158,6 +158,32 @@ export class HocVienController {
   }
 }
 
+// ==================== QuanHam Controller ====================
+export class QuanHamController {
+  async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await quanHamService.getAll();
+      res.json({ success: true, data } as ApiResponse);
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+// ==================== ChucVu Controller ====================
+export class ChucVuController {
+  async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await chucVuService.getAll();
+      res.json({ success: true, data } as ApiResponse);
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
 export const donViController = new DonViController();
 export const canBoController = new CanBoController();
 export const hocVienController = new HocVienController();
+export const quanHamController = new QuanHamController();
+export const chucVuController = new ChucVuController();

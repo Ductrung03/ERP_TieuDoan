@@ -1,6 +1,6 @@
 import { hocVienRepository } from '../repositories';
 import { HocVien, CreateHocVienDto, UpdateHocVienDto } from '../entities';
-import { NotFoundError } from '../../core/errors';
+import { NotFoundError, BadRequestError } from '../../core/errors';
 
 export class HocVienService {
   async getAll(donviId?: string): Promise<HocVien[]> {
@@ -30,7 +30,14 @@ export class HocVienService {
 
   async delete(id: string): Promise<void> {
     await this.getById(id);
-    await hocVienRepository.delete(id);
+    try {
+      await hocVienRepository.delete(id);
+    } catch (error: any) {
+      if (error.code === '23503') { // ForeignKeyViolation in Postgres
+        throw new BadRequestError('Không thể xóa học viên này vì dữ liệu đang được sử dụng ở chức năng khác (VD: Phân công gác).');
+      }
+      throw error;
+    }
   }
 }
 

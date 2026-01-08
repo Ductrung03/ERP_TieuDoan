@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { usePermission } from '../../hooks/usePermission';
-import roleService, { type Role, type CreateRoleDto, type UpdateRoleDto } from '../../api/services/role.service';
+import { roleService, type Role, type CreateRoleDto, type UpdateRoleDto } from '../../api/services';
 import { useNavigate } from 'react-router-dom';
 
 const RoleList: React.FC = () => {

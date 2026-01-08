@@ -1,3 +1,5 @@
-export { donViService } from './donvi.service';
-export { canBoService } from './canbo.service';
-export { hocVienService} from './hocvien.service';
+export * from './donvi.service';
+export * from './canbo.service';
+export * from './hocvien.service';
+export * from './quanham.service';
+export * from './chucvu.service';

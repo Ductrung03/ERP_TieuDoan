@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { moduleLoader } from '../../modules/_loader';
+import sharedRouter from './shared.routes';
 
 const router = Router();
 
@@ -20,5 +21,8 @@ router.get('/', (req: Request, res: Response) => {
     },
   });
 });
+
+// Register shared routes (Core/Shared entities)
+router.use('/shared', sharedRouter);
 
 export default router;

@@ -4,12 +4,18 @@ import { toast } from 'react-toastify';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import Pageheader from '../../shared/layouts-components/pageheader/pageheader';
 import { hocVienService, type HocVien, type CreateHocVienDto } from '../../api/services';
+import DeleteConfirmationModal from '../../shared/components/common/DeleteConfirmationModal';
 
 const QuanLyHocVien: React.FC = () => {
     const [hocViens, setHocViens] = useState<HocVien[]>([]);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Delete Modal State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateHocVienDto>();
 
@@ -24,6 +30,7 @@ const QuanLyHocVien: React.FC = () => {
             setHocViens(data);
         } catch (error) {
             console.error('Failed to load:', error);
+            toast.error('Không thể tải danh sách học viên');
         } finally {
             setLoading(false);
         }
@@ -42,18 +49,34 @@ const QuanLyHocVien: React.FC = () => {
             reset();
         } catch (error) {
             console.error('Failed to create:', error);
+            toast.error('Tạo học viên thất bại');
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('Bạn có chắc muốn xóa?')) return;
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
+        setDeleteLoading(true);
         try {
-            await hocVienService.delete(id);
-            toast.success('Xóa thành công!');
+            await hocVienService.delete(deleteId);
+            toast.success('Xóa học viên thành công!');
+            setShowDeleteModal(false);
             loadData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to delete:', error);
+            toast.error(error.response?.data?.error?.message || 'Xóa thất bại');
+        } finally {
+            setDeleteLoading(false);
         }
+    };
+
+    const handleCloseDeleteModal = () => {
+        setShowDeleteModal(false);
+        setDeleteId(null);
     };
 
     // Filter data
@@ -295,7 +318,7 @@ const QuanLyHocVien: React.FC = () => {
                                                         variant="danger-light"
                                                         size="sm"
                                                         title="Xóa"
-                                                        onClick={() => handleDelete(item.mahocvien)}
+                                                        onClick={() => handleDeleteClick(item.mahocvien)}
                                                     >
                                                         <i className="ti ti-trash"></i>
                                                     </Button>
@@ -309,8 +332,16 @@ const QuanLyHocVien: React.FC = () => {
                     )}
                 </Card.Body>
             </Card>
+
+            <DeleteConfirmationModal
+                show={showDeleteModal}
+                title="Xóa Học Viên"
+                content={`Bạn có chắc muốn xóa học viên này không? Hành động này không thể hoàn tác.`}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCloseDeleteModal}
+                loading={deleteLoading}
+            />
         </div>
     );
 };
-
 export default QuanLyHocVien;

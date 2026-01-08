@@ -17,6 +17,10 @@ async function bootstrap(): Promise<void> {
       throw new Error('Không thể kết nối database');
     }
 
+    // Seed Data
+    const { seedDatabase } = await import('./core/database/seeds');
+    await seedDatabase();
+
     // Load all modules
     logger.info('Đang load các modules...');
     const modulesDir = path.join(__dirname, 'modules');

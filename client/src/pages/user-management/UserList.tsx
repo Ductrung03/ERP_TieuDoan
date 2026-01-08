@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { usePermission } from '../../hooks/usePermission';
-import userService, { type User, type CreateUserDto, type UpdateUserDto } from '../../api/services/user.service';
-import roleService, { type Role } from '../../api/services/role.service';
+import {
+    userService,
+    roleService,
+    type User,
+    type CreateUserDto,
+    type UpdateUserDto,
+    type Role
+} from '../../api/services';
 
 const UserList: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
